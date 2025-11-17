@@ -35,13 +35,18 @@ public class ReservationService {
         r.setUser(user);
         r = reservationRepository.save(r);
 
-        // Simulate payment success (fictif)
-        r.setPaid(true);
-        reservationRepository.save(r);
+        // Payment will be handled via payment endpoints (mock)
 
         // Send confirmation email (async in production)
         emailService.sendReservationConfirmation(user.getEmail(), event);
 
         return r;
+    }
+
+    @Transactional
+    public Reservation confirmPayment(Long reservationId) {
+        Reservation r = reservationRepository.findById(reservationId).orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+        r.setPaid(true);
+        return reservationRepository.save(r);
     }
 }
