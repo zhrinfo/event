@@ -113,7 +113,7 @@ export default function Accueil() {
     {
       icon: <Calendar size={28} className="service-icon" />,
       title: "Programmation Événements",
-      description: "Découvrez des événements exclusifs toute l'année"
+      description: "aaaa des événements exclusifs toute l'année"
     },
     {
       icon: <TeamIcon size={28} className="service-icon" />,
