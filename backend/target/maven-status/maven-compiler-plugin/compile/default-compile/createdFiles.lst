@@ -9,7 +9,10 @@ com\example\eventapp\controller\AuthController.class
 com\example\eventapp\controller\ReservationController.class
 com\example\eventapp\model\User.class
 com\example\eventapp\service\EmailService.class
+com\example\eventapp\dto\PaymentRequestDto.class
 com\example\eventapp\security\JwtUtils.class
+com\example\eventapp\dto\PaymentConfirmationDto.class
+com\example\eventapp\service\PaymentService.class
 com\example\eventapp\service\UserService.class
 com\example\eventapp\model\Event.class
 com\example\eventapp\dto\AuthRequest.class
@@ -19,4 +22,5 @@ com\example\eventapp\service\EventService.class
 com\example\eventapp\model\Role.class
 com\example\eventapp\config\OpenApiConfig.class
 com\example\eventapp\dto\AuthResponse.class
+com\example\eventapp\dto\PaymentIntentDto.class
 com\example\eventapp\security\JwtAuthenticationFilter.class

@@ -28,6 +28,10 @@ public class ReservationController {
 
     @PostMapping("/event/{eventId}")
     public ResponseEntity<Reservation> reserve(@PathVariable("eventId") Long eventId, @AuthenticationPrincipal UserDetails principal) {
+        System.out.println("🎫 Reservation attempt for event: " + eventId);
+        System.out.println("👤 User: " + principal.getUsername());
+        System.out.println("🔐 Authorities: " + principal.getAuthorities());
+        
         User u = userService.findByEmail(principal.getUsername());
         Reservation r = reservationService.reserve(eventId, u);
         return ResponseEntity.ok(r);
