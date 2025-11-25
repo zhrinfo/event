@@ -1,0 +1,68 @@
+services:
+  # Base de données MySQL
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: eventapp
+      MYSQL_USER: eventapp
+      MYSQL_PASSWORD: eventapp123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      timeout: 5s
+      retries: 10
+    networks:
+      - eventapp-network
+    container_name: eventapp-mysql
+
+  # Backend Spring Boot
+  backend:
+    image: eclipse-temurin:17-jre-jammy
+    working_dir: /app
+    command: java -jar app.jar
+    volumes:
+      - ./backend/target/eventapp-0.0.1-SNAPSHOT.jar:/app/app.jar:ro
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/eventapp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: eventapp
+      SPRING_DATASOURCE_PASSWORD: eventapp123
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_FLYWAY_ENABLED: "true"
+      APP_JWT_SECRET: ReplaceThisVerySecretKeyChangeInProduction
+      APP_JWT_EXPIRATION_MS: "86400000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - eventapp-network
+    container_name: eventapp-backend
+    restart: unless-stopped
+
+  # Frontend Nginx pour servir le build React
+  frontend:
+    image: nginx:alpine
+    volumes:
+      - ./react-app/dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - eventapp-network
+    container_name: eventapp-frontend
+    restart: unless-stopped
+
+networks:
+  eventapp-network:
+    driver: bridge
+
+volumes:
+  mysql-data:
+    driver: local
