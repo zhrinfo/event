@@ -78,20 +78,18 @@ const styles = {
 
 type EventForm = {
   title: string;
-  date: string;
-  time: string;
+  startDateTime: string;
   location: string;
   description: string;
-  imageUrl: string;
+  maxParticipants: number;
 };
 
 const initialForm: EventForm = {
   title: "",
-  date: "",
-  time: "",
+  startDateTime: "",
   location: "",
   description: "",
-  imageUrl: "",
+  maxParticipants: 0,
 };
 
 const AjouteEvent: React.FC = () => {
@@ -119,14 +117,39 @@ const AjouteEvent: React.FC = () => {
     e.preventDefault();
     setSubmitting(true);
     setMessage(null);
+    
     try {
-      // TODO: intégrer un appel API/Redux si nécessaire
-      console.log("Nouvel événement:", form);
-      await new Promise((r) => setTimeout(r, 500));
-      setMessage("Événement ajouté avec succès.");
+      const eventData = {
+        ...form,
+        startDateTime: form.startDateTime,
+      };
+
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Vous devez être connecté pour créer un événement');
+      }
+
+      const response = await fetch('http://localhost:8090/api/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(eventData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la création de l\'événement');
+      }
+
+      const result = await response.json();
+      console.log('Événement créé:', result);
+      setMessage("Événement ajouté avec succès!");
       setForm(initialForm);
     } catch (err) {
-      setMessage("Une erreur est survenue, veuillez réessayer.");
+      console.error('Erreur:', err);
+      setMessage(err instanceof Error ? err.message : "Une erreur est survenue, veuillez réessayer.");
     } finally {
       setSubmitting(false);
     }
@@ -171,31 +194,17 @@ const AjouteEvent: React.FC = () => {
               />
             </label>
 
-            <div style={styles.gridRow}>
-              <label style={styles.label}>
-                <span>Date</span>
-                <input
-                  type="date"
-                  name="date"
-                  value={form.date}
-                  onChange={handleChange}
-                  required
-                  style={styles.input}
-                />
-              </label>
-
-              <label style={styles.label}>
-                <span>Heure</span>
-                <input
-                  type="time"
-                  name="time"
-                  value={form.time}
-                  onChange={handleChange}
-                  required
-                  style={styles.input}
-                />
-              </label>
-            </div>
+            <label style={styles.label}>
+              <span>Date et heure de l'événement</span>
+              <input
+                type="datetime-local"
+                name="startDateTime"
+                value={form.startDateTime}
+                onChange={handleChange}
+                required
+                style={styles.input}
+              />
+            </label>
 
             <label style={styles.label}>
               <span>Lieu</span>
@@ -222,13 +231,14 @@ const AjouteEvent: React.FC = () => {
             </label>
 
             <label style={styles.label}>
-              <span>Image (URL)</span>
+              <span>Nombre maximum de participants</span>
               <input
-                type="url"
-                name="imageUrl"
-                value={form.imageUrl}
+                type="number"
+                name="maxParticipants"
+                min="1"
+                value={form.maxParticipants}
                 onChange={handleChange}
-                placeholder="https://exemple.com/image.jpg"
+                required
                 style={styles.input}
               />
             </label>

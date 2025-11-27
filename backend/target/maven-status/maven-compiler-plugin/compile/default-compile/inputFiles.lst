@@ -7,12 +7,14 @@ C:\Users\U\event\backend\src\main\java\com\example\eventapp\dto\AuthRequest.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\controller\ReservationController.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\model\Event.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\config\OpenApiConfig.java
+C:\Users\U\event\backend\src\main\java\com\example\eventapp\dto\StripePaymentRequest.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\dto\PaymentConfirmationDto.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\EventAppApplication.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\repository\ReservationRepository.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\service\UserService.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\controller\AuthController.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\dto\PaymentIntentDto.java
+C:\Users\U\event\backend\src\main\java\com\example\eventapp\controller\UserController.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\security\JwtAuthenticationFilter.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\config\SecurityConfig.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\service\PaymentService.java
@@ -21,6 +23,7 @@ C:\Users\U\event\backend\src\main\java\com\example\eventapp\controller\EventCont
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\model\Role.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\service\EventService.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\security\JwtUtils.java
+C:\Users\U\event\backend\src\main\java\com\example\eventapp\controller\HealthController.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\dto\PaymentRequestDto.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\model\User.java
 C:\Users\U\event\backend\src\main\java\com\example\eventapp\repository\UserRepository.java

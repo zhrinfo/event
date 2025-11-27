@@ -24,6 +24,7 @@ CREATE TABLE event (
     start_date_time DATETIME,
     capacity INT NOT NULL DEFAULT 0,
     seats_available INT NOT NULL DEFAULT 0,
+    prix DOUBLE DEFAULT 0.0,  -- Colonne ajoutée ici
     creator_id BIGINT,
     FOREIGN KEY (creator_id) REFERENCES users(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

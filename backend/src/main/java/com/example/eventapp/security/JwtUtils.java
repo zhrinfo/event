@@ -32,9 +32,16 @@ public class JwtUtils {
 
     public boolean validate(String token) {
         try {
-            JWT.require(Algorithm.HMAC256(jwtSecret)).build().verify(token);
+            System.out.println("🔍 JWT Validation - Token: " + token.substring(0, Math.min(token.length(), 30)) + "...");
+            System.out.println("🔑 JWT Secret: " + jwtSecret.substring(0, Math.min(jwtSecret.length(), 10)) + "...");
+            
+            DecodedJWT jwt = JWT.require(Algorithm.HMAC256(jwtSecret)).build().verify(token);
+            System.out.println("✅ JWT Valid - Subject: " + jwt.getSubject());
+            System.out.println("✅ JWT Valid - Expires: " + jwt.getExpiresAt());
             return true;
         } catch (Exception e) {
+            System.out.println("❌ JWT Invalid - Error: " + e.getMessage());
+            e.printStackTrace();
             return false;
         }
     }

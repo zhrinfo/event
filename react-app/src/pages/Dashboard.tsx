@@ -81,6 +81,7 @@ const Dashboard: React.FC = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [filter, setFilter] = useState<string>('tous');
   const [view, setView] = useState<'list' | 'calendar'>('list');
+  const userEmail = localStorage.getItem('email');
 
   // Calcul des statistiques
   const totalEvents = events.length;
@@ -104,6 +105,25 @@ const Dashboard: React.FC = () => {
       
       <div className="dashboard-container">
         <h1 className="dashboard-title">Dashboard Événements</h1>
+        {userEmail && (
+         <p
+  style={{
+    marginTop: 8,
+    marginBottom: 24,
+    fontSize: 16,
+    color: '#ffffff',
+    backgroundColor: '#111827',
+    padding: '12px 18px',
+    borderRadius: 9999,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+  }}
+>
+  <span>Bonjour</span>
+  <strong style={{ fontWeight: 600 }}>{userEmail}</strong>
+</p>
+        )}
         
         {/* Cartes de statistiques */}
         <div className="dashboard-grid">

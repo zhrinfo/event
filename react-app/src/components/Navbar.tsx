@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { logout, isAdmin } from '../services/authService';
 import './Navbar.css';
 
 const Navbar: React.FC = () => {
+  const navigate = useNavigate();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [activeLink, setActiveLink] = useState('/dashboard');
   const [isScrolled, setIsScrolled] = useState(false);
+
+  // Récupérer les rôles de l'utilisateur
+  const userIsAdmin = isAdmin();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -26,6 +31,11 @@ const Navbar: React.FC = () => {
     setIsMenuOpen(false);
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <nav className={`navbar ${isScrolled ? 'scrolled' : ''}`}>
       <div className="nav-container">
@@ -34,22 +44,30 @@ const Navbar: React.FC = () => {
         </Link>
         
         <ul className={`nav-links ${isMenuOpen ? 'active' : ''}`}>
-          <li className={activeLink === '/dashboard' ? 'active' : ''}>
-            <Link 
-              to="/dashboard" 
-              onClick={() => handleLinkClick('/dashboard')}
-            >
-              Tableau de bord
-            </Link>
-          </li>
-          <li className={activeLink === '/ajouter-event' ? 'active' : ''}>
-            <Link 
-              to="/ajouter-event" 
-              onClick={() => handleLinkClick('/ajouter-event')}
-            >
-              Ajouter un événement
-            </Link>
-          </li>
+          {/* Liens pour les admins */}
+          {userIsAdmin && (
+            <li className={activeLink === '/dashboard' ? 'active' : ''}>
+              <Link 
+                to="/dashboard" 
+                onClick={() => handleLinkClick('/dashboard')}
+              >
+                Tableau de bord
+              </Link>
+            </li>
+          )}
+          
+          {userIsAdmin && (
+            <li className={activeLink === '/ajouter-event' ? 'active' : ''}>
+              <Link 
+                to="/ajouter-event" 
+                onClick={() => handleLinkClick('/ajouter-event')}
+              >
+                Ajouter un événement
+              </Link>
+            </li>
+          )}
+          
+          {/* Liens pour tous les utilisateurs */}
           <li className={activeLink === '/events' ? 'active' : ''}>
             <Link 
               to="/events" 
@@ -58,14 +76,24 @@ const Navbar: React.FC = () => {
               Liste des événements
             </Link>
           </li>
-          <li>
+          
+          <li className={activeLink === '/profile' ? 'active' : ''}>
             <Link 
-              to="/logout" 
+              to="/profile" 
+              onClick={() => handleLinkClick('/profile')}
+            >
+              Mon profil
+            </Link>
+          </li>
+          
+          <li>
+            <button 
               className="btn-cta"
-              onClick={() => handleLinkClick('/logout')}
+              onClick={handleLogout}
+              style={{ cursor: 'pointer' }}
             >
               Déconnexion
-            </Link>
+            </button>
           </li>
         </ul>
 

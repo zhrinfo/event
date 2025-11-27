@@ -1,16 +1,31 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Navbar from "../components/Navbar";
-
-type EventItem = {
-  id: string;
-  title: string;
-  date: string; // ISO
-  description?: string;
-};
+import type { EventItem, EventFilters } from "../types";
 
 const mockEvents: EventItem[] = [
-  { id: "1", title: "Conférence Tech", date: new Date().toISOString(), description: "Rencontre des devs." },
-  { id: "2", title: "Atelier React", date: new Date(Date.now() + 86400000).toISOString(), description: "Hooks et performance." },
+  { 
+    id: 1, 
+    title: "Conférence Tech", 
+    date: new Date().toISOString(), 
+    startDateTime: new Date().toISOString(),
+    description: "Rencontre des devs.",
+    location: "Salle de conférence",
+    category: "CONFERENCE",
+    capacity: 100,
+    seatsAvailable: 75
+  },
+  { 
+    id: 2, 
+    title: "Atelier React", 
+    date: new Date(Date.now() + 86400000).toISOString(),
+    startDateTime: new Date(Date.now() + 86400000).toISOString(),
+    description: "Hooks et performance.",
+    location: "Salle de formation",
+    category: "WORKSHOP",
+    capacity: 30,
+    seatsAvailable: 15
+  },
 ];
 
 function toInputDate(iso: string) {
@@ -29,6 +44,7 @@ function isPast(iso: string) {
 }
 
 export default function Events() {
+  const navigate = useNavigate();
   const [events, setEvents] = useState<EventItem[]>([]);
   const [editing, setEditing] = useState(false);
   const [current, setCurrent] = useState<EventItem | null>(null);
@@ -41,16 +57,65 @@ export default function Events() {
   // Recherche + filtre + tri
   const [query, setQuery] = useState("");
   const [upcomingOnly, setUpcomingOnly] = useState(false);
+  const [filters, setFilters] = useState<EventFilters>({});
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
 
   // Style focus + ref pour la barre de recherche
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // TODO: remplacer par un appel API réel (GET /api/events)
-    // try { const res = await fetch("/api/events"); setEvents(await res.json()); } catch { setEvents(mockEvents); }
-    setEvents(mockEvents);
-  }, []);
+    const fetchEvents = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('No authentication token found');
+        }
+
+        // Build query string for filters
+        const params = new URLSearchParams();
+        if (filters.category) params.append('category', filters.category);
+        if (filters.location) params.append('location', filters.location);
+        if (filters.from) params.append('from', filters.from);
+        if (filters.to) params.append('to', filters.to);
+
+        const url = params.toString() 
+          ? `http://localhost:8090/api/events?${params.toString()}`
+          : "http://localhost:8090/api/events";
+
+        const res = await fetch(url, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (res.status === 401) {
+          // Handle unauthorized (token expired or invalid)
+          localStorage.removeItem('token');
+          // Optionally redirect to login
+          // window.location.href = '/login';
+          throw new Error('Session expired. Please log in again.');
+        }
+
+        if (!res.ok) throw new Error("Failed to fetch events");
+        
+        const data = await res.json();
+        // Add date alias for compatibility
+        const eventsWithDate = data.map((event: any) => ({
+          ...event,
+          date: event.startDateTime
+        }));
+        setEvents(eventsWithDate);
+      } catch (error) {
+        console.error("Error fetching events:", error);
+        // Fallback to mock data if API call fails
+        setEvents(mockEvents);
+      }
+    };
+
+    fetchEvents();
+  }, [filters]);
 
   useEffect(() => {
     const prev = {
@@ -90,10 +155,14 @@ export default function Events() {
     setCurrent(null);
   };
 
-  const onDelete = async (id: string) => {
+  const onDelete = async (id: number) => {
     if (!confirm("Supprimer cet événement ?")) return;
     // TODO: await fetch(`/api/events/${id}`, { method: "DELETE" });
     setEvents((prev) => prev.filter((e) => e.id !== id));
+  };
+
+  const handleReserve = (eventId: number) => {
+    navigate(`/reserve/${eventId}`);
   };
 
   const onSubmit = async (ev: React.FormEvent) => {
@@ -247,7 +316,133 @@ export default function Events() {
               <input type="checkbox" checked={upcomingOnly} onChange={(e) => setUpcomingOnly(e.target.checked)} />
               À venir seulement
             </label>
+
+            <button
+              type="button"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              style={{
+                padding: "6px 12px",
+                borderRadius: 6,
+                border: "1px solid #e5e7eb",
+                background: showAdvancedFilters ? "#3b82f6" : "rgba(255,255,255,0.7)",
+                color: showAdvancedFilters ? "white" : "#374151",
+                cursor: "pointer",
+                fontSize: 14
+              }}
+            >
+              {showAdvancedFilters ? "Masquer" : "Filtres"} avancés
+            </button>
           </div>
+
+          {/* Advanced Filters */}
+          {showAdvancedFilters && (
+            <div style={{
+              background: "rgba(255,255,255,0.9)",
+              padding: "1rem",
+              borderRadius: 8,
+              border: "1px solid #e5e7eb",
+              marginTop: 12,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+              gap: "1rem"
+            }}>
+              <div>
+                <label style={{ display: "block", marginBottom: "4px", fontSize: 12, fontWeight: 500, color: "#374151" }}>
+                  Catégorie
+                </label>
+                <select
+                  value={filters.category || ""}
+                  onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value || undefined }))}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    borderRadius: 6,
+                    border: "1px solid #d1d5db",
+                    fontSize: 14
+                  }}
+                >
+                  <option value="">Toutes les catégories</option>
+                  <option value="CONFERENCE">Conférence</option>
+                  <option value="WORKSHOP">Atelier</option>
+                  <option value="MEETUP">Meetup</option>
+                  <option value="SOCIAL">Social</option>
+                </select>
+              </div>
+
+              <div>
+                <label style={{ display: "block", marginBottom: "4px", fontSize: 12, fontWeight: 500, color: "#374151" }}>
+                  Lieu
+                </label>
+                <input
+                  type="text"
+                  value={filters.location || ""}
+                  onChange={(e) => setFilters(prev => ({ ...prev, location: e.target.value || undefined }))}
+                  placeholder="Filtrer par lieu"
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    borderRadius: 6,
+                    border: "1px solid #d1d5db",
+                    fontSize: 14
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", marginBottom: "4px", fontSize: 12, fontWeight: 500, color: "#374151" }}>
+                  Date de début
+                </label>
+                <input
+                  type="date"
+                  value={filters.from || ""}
+                  onChange={(e) => setFilters(prev => ({ ...prev, from: e.target.value || undefined }))}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    borderRadius: 6,
+                    border: "1px solid #d1d5db",
+                    fontSize: 14
+                  }}
+                />
+              </div>
+
+              <div>
+                <label style={{ display: "block", marginBottom: "4px", fontSize: 12, fontWeight: 500, color: "#374151" }}>
+                  Date de fin
+                </label>
+                <input
+                  type="date"
+                  value={filters.to || ""}
+                  onChange={(e) => setFilters(prev => ({ ...prev, to: e.target.value || undefined }))}
+                  style={{
+                    width: "100%",
+                    padding: "6px 8px",
+                    borderRadius: 6,
+                    border: "1px solid #d1d5db",
+                    fontSize: 14
+                  }}
+                />
+              </div>
+
+              <div style={{ gridColumn: "1 / -1", display: "flex", justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setFilters({})}
+                  style={{
+                    padding: "4px 12px",
+                    borderRadius: 6,
+                    border: "1px solid #d1d5db",
+                    background: "#f3f4f6",
+                    color: "#6b7280",
+                    cursor: "pointer",
+                    fontSize: 12
+                  }}
+                >
+                  Réinitialiser les filtres
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Grille responsive */}
@@ -302,15 +497,64 @@ export default function Events() {
                 {e.description ? (
                   <p style={{ margin: "2px 0 6px 0", color: "#333" }}>{e.description}</p>
                 ) : null}
-                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                  <button style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #c7d2fe", cursor: "pointer", background: "#eef2ff" }} onClick={() => openEdit(e)}>
+                
+                <div style={{ fontSize: "12px", color: "#444", margin: "6px 0" }}>
+                  <span style={{ marginRight: "12px" }}>📍 {e.location || "Non spécifié"}</span>
+                  <span style={{ marginRight: "12px" }}>🏷️ {e.category || "Non catégorisé"}</span>
+                </div>
+                
+                <div style={{ fontSize: "12px", color: "#444", margin: "6px 0" }}>
+                  <span>👥 {e.seatsAvailable || 0} / {e.capacity || 0} places</span>
+                  {e.seatsAvailable === 0 && (
+                    <span style={{ color: "#dc2626", marginLeft: "8px", fontWeight: "bold" }}>
+                      COMPLET
+                    </span>
+                  )}
+                </div>
+                
+                <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+                  <button 
+                    style={{ 
+                      padding: "6px 10px", 
+                      borderRadius: 6, 
+                      border: "1px solid #c7d2fe", 
+                      cursor: "pointer", 
+                      background: "#eef2ff",
+                      fontSize: "12px"
+                    }} 
+                    onClick={() => openEdit(e)}
+                  >
                     Modifier
                   </button>
                   <button
-                    style={{ padding: "6px 10px", borderRadius: 6, border: "1px solid #fecaca", cursor: "pointer", background: "#fee2e2", color: "#991b1b" }}
+                    style={{ 
+                      padding: "6px 10px", 
+                      borderRadius: 6, 
+                      border: "1px solid #fecaca", 
+                      cursor: "pointer", 
+                      background: "#fee2e2", 
+                      color: "#991b1b",
+                      fontSize: "12px"
+                    }}
                     onClick={() => onDelete(e.id)}
                   >
                     Supprimer
+                  </button>
+                  <button
+                    style={{ 
+                      padding: "6px 10px", 
+                      borderRadius: 6, 
+                      border: "1px solid #bbf7d0", 
+                      cursor: (e.seatsAvailable || 0) > 0 ? "pointer" : "not-allowed", 
+                      background: (e.seatsAvailable || 0) > 0 ? "#dcfce7" : "#f3f4f6",
+                      color: (e.seatsAvailable || 0) > 0 ? "#166534" : "#9ca3af",
+                      fontSize: "12px",
+                      opacity: (e.seatsAvailable || 0) > 0 ? 1 : 0.5
+                    }}
+                    onClick={() => (e.seatsAvailable || 0) > 0 && handleReserve(e.id)}
+                    disabled={(e.seatsAvailable || 0) === 0}
+                  >
+                    Réserver
                   </button>
                 </div>
               </li>
