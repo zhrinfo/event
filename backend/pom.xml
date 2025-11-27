@@ -107,6 +107,17 @@
                     </compilerArgs>
                 </configuration>
             </plugin>
+            <plugin>
+             <groupId>org.flywaydb</groupId>
+             <artifactId>flyway-maven-plugin</artifactId>
+             <version>9.22.3</version>
+             <configuration>
+                <url>${spring.datasource.url}</url>
+                <user>${spring.datasource.username}</user>
+                <password>${spring.datasource.password}</password>
+              </configuration>
+            </plugin>
+            
         </plugins>
     </build>
 </project>

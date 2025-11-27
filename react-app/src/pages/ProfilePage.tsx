@@ -36,7 +36,7 @@ const ProfilePage: React.FC = () => {
         setUser(userData);
 
         // Fetch user reservations
-        const reservationsResponse = await fetch(`http://localhost:8090/api/reservations/user/${userData.id}`, {
+        const reservationsResponse = await fetch(`http://localhost:8090/api/reservations/user`, {
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
@@ -88,7 +88,58 @@ const ProfilePage: React.FC = () => {
     );
   }
 
-  if (error || !user) {
+  const renderReservations = () => {
+    if (reservations.length === 0) {
+      return <p>Aucune réservation trouvée.</p>;
+    }
+
+    return (
+      <div style={{ marginTop: '2rem' }}>
+        <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: '#1f2937' }}>Mes réservations</h2>
+        <div style={{ display: 'grid', gap: '1rem' }}>
+          {reservations.map((reservation) => (
+            <div 
+              key={reservation.id}
+              style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem',
+                padding: '1rem',
+                backgroundColor: isUpcoming(reservation.event?.startDateTime || '') ? '#ffffff' : '#f9fafb',
+                opacity: isUpcoming(reservation.event?.startDateTime || '') ? 1 : 0.7
+              }}
+            >
+              <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: '#111827', marginBottom: '0.5rem' }}>
+                {reservation.event?.title || 'Événement sans nom'}
+              </h3>
+              <p style={{ margin: '0.25rem 0', color: '#4b5563' }}>
+                📅 {reservation.event?.startDateTime ? formatDate(reservation.event.startDateTime) : 'Date non spécifiée'}
+              </p>
+              <p style={{ margin: '0.25rem 0', color: '#4b5563' }}>
+                📍 {reservation.event?.location || 'Lieu non spécifié'}
+              </p>
+              <p style={{ margin: '0.25rem 0', color: '#4b5563' }}>
+                💰 Prix: {reservation.event?.prix ? `${reservation.event.prix} €` : 'Gratuit'}
+              </p>
+              <div style={{
+                display: 'inline-block',
+                padding: '0.25rem 0.5rem',
+                borderRadius: '9999px',
+                backgroundColor: isUpcoming(reservation.event?.startDateTime || '') ? '#d1fae5' : '#fee2e2',
+                color: isUpcoming(reservation.event?.startDateTime || '') ? '#065f46' : '#991b1b',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                marginTop: '0.5rem'
+              }}>
+                {isUpcoming(reservation.event?.startDateTime || '') ? 'À venir' : 'Terminé'}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  if (error) {
     return (
       <div>
         <Navbar />
@@ -107,6 +158,17 @@ const ProfilePage: React.FC = () => {
           >
             Se connecter
           </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div>
+        <Navbar />
+        <div style={{ padding: '2rem', textAlign: 'center' }}>
+          <div>Chargement des informations utilisateur...</div>
         </div>
       </div>
     );
@@ -136,17 +198,6 @@ const ProfilePage: React.FC = () => {
               <div style={{ display: 'grid', gap: '0.5rem', color: '#6b7280' }}>
                 <div style={{ fontSize: '1.1rem', color: '#374151' }}>
                   📧 {user.email}
-                </div>
-                <div>
-                  🏷️ Rôle: <span style={{ 
-                    backgroundColor: '#dbeafe', 
-                    color: '#1e40af', 
-                    padding: '0.25rem 0.5rem', 
-                    borderRadius: '0.25rem',
-                    fontSize: '0.875rem'
-                  }}>
-                    {user.role}
-                  </span>
                 </div>
               </div>
             </div>
@@ -253,7 +304,7 @@ const ProfilePage: React.FC = () => {
                           <div style={{ display: 'grid', gap: '0.25rem', fontSize: '0.875rem', color: '#6b7280' }}>
                             <div>📅 {formatDate(reservation.event.startDateTime)}</div>
                             <div>📍 {reservation.event.location}</div>
-                            <div>🏷️ {reservation.event.category}</div>
+                            <div>🏷️ {reservation.event.prix}$</div>
                           </div>
                         </div>
                         <div style={{ textAlign: 'right' }}>

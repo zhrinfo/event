@@ -81,7 +81,8 @@ type EventForm = {
   startDateTime: string;
   location: string;
   description: string;
-  maxParticipants: number;
+  capacity: number;
+  prix: number;
 };
 
 const initialForm: EventForm = {
@@ -89,7 +90,8 @@ const initialForm: EventForm = {
   startDateTime: "",
   location: "",
   description: "",
-  maxParticipants: 0,
+  capacity: 0,
+  prix: 0,
 };
 
 const AjouteEvent: React.FC = () => {
@@ -107,7 +109,7 @@ const AjouteEvent: React.FC = () => {
   }, []);
 
   const handleChange: React.ChangeEventHandler<
-    HTMLInputElement | HTMLTextAreaElement
+    HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
   > = (e) => {
     const { name, value } = e.target;
     setForm((f) => ({ ...f, [name]: value }));
@@ -119,6 +121,13 @@ const AjouteEvent: React.FC = () => {
     setMessage(null);
     
     try {
+      // Vérifier si la date est dans le passé
+      const selectedDate = new Date(form.startDateTime);
+      const now = new Date();
+      
+      if (selectedDate <= now) {
+        throw new Error("La date de l'événement doit être dans le futur");
+      }
       const eventData = {
         ...form,
         startDateTime: form.startDateTime,
@@ -155,7 +164,11 @@ const AjouteEvent: React.FC = () => {
     }
   };
 
-  return (
+  
+
+  
+
+  return (    
     <div style={styles.page}>
       {/* Navbar */}
       <Navbar />
@@ -234,11 +247,26 @@ const AjouteEvent: React.FC = () => {
               <span>Nombre maximum de participants</span>
               <input
                 type="number"
-                name="maxParticipants"
+                name="capacity"
                 min="1"
-                value={form.maxParticipants}
+                value={form.capacity}
                 onChange={handleChange}
                 required
+                style={styles.input}
+              />
+            </label>
+
+            <label style={styles.label}>
+              <span>Prix (en €)</span>
+              <input
+                type="number"
+                name="prix"
+                value={form.prix}
+                onChange={handleChange}
+                min="0"
+                step="0.01"
+                required
+                placeholder="0.00"
                 style={styles.input}
               />
             </label>

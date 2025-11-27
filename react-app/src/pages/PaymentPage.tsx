@@ -124,10 +124,6 @@ const PaymentPage: React.FC = () => {
     }
   };
 
-  const formatAmount = (cents: number): string => {
-    return (cents / 100).toFixed(2);
-  };
-
   if (loading) {
     return (
       <div>
@@ -221,53 +217,22 @@ const PaymentPage: React.FC = () => {
               
               <div style={{ display: 'grid', gap: '0.5rem', color: '#6b7280', fontSize: '0.875rem' }}>
                 <div>📅 {new Date(reservation.event.startDateTime).toLocaleDateString('fr-FR')}</div>
-                <div>🕒 {new Date(reservation.event.startDateTime).toLocaleTimeString('fr-FR', {
-                  hour: '2-digit',
-                  minute: '2-digit'
-                })}</div>
+                
                 <div>📍 {reservation.event.location}</div>
-                <div>🏷️ {reservation.event.category}</div>
+                <div>🏷️ {reservation.event.title}</div>
               </div>
             </div>
           )}
 
-          <div style={{
-            backgroundColor: '#f3f4f6',
-            padding: '1.5rem',
-            borderRadius: '0.5rem',
-            marginBottom: '2rem',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '1.25rem', color: '#374151', marginBottom: '0.5rem' }}>
-              Montant à payer
-            </div>
-            <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#1f2937' }}>
-              {formatAmount(amount)} €
-            </div>
-          </div>
 
           {!paymentIntent ? (
             <div>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#374151' }}>
-                  Montant (en centimes)
-                </label>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(Number(e.target.value))}
-                  min="100"
-                  step="100"
-                  style={{
-                    width: '100%',
-                    padding: '0.75rem',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '0.375rem',
-                    fontSize: '1rem'
-                  }}
-                />
-                <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.25rem' }}>
-                  Soit {formatAmount(amount)} €
+              <div style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
+                <div style={{ fontSize: '1.25rem', color: '#374151', marginBottom: '0.5rem' }}>
+                  Montant à payer
+                </div>
+                <div style={{ fontSize: '2.5rem', fontWeight: 'bold', color: '#1f2937' }}>
+                  {reservation?.event?.prix ?? 'N/A'}€
                 </div>
               </div>
 

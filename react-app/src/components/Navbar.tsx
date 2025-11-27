@@ -76,7 +76,7 @@ const Navbar: React.FC = () => {
               Liste des événements
             </Link>
           </li>
-          
+          {!userIsAdmin && (
           <li className={activeLink === '/profile' ? 'active' : ''}>
             <Link 
               to="/profile" 
@@ -85,6 +85,7 @@ const Navbar: React.FC = () => {
               Mon profil
             </Link>
           </li>
+          )}
           
           <li>
             <button 

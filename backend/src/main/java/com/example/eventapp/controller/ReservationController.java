@@ -2,12 +2,17 @@ package com.example.eventapp.controller;
 
 import com.example.eventapp.model.Reservation;
 import com.example.eventapp.model.User;
+import com.example.eventapp.model.Event;
 import com.example.eventapp.service.ReservationService;
 import com.example.eventapp.service.UserService;
 import com.example.eventapp.service.PaymentService;
 import com.example.eventapp.dto.PaymentIntentDto;
 import com.example.eventapp.dto.PaymentConfirmationDto;
 import com.example.eventapp.dto.PaymentRequestDto;
+import com.example.eventapp.dto.ReservationDTO;
+import com.example.eventapp.dto.EventDTO;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -52,5 +57,44 @@ public class ReservationController {
             reservationService.confirmPayment(id);
         }
         return ResponseEntity.ok(res);
+    }
+
+    @GetMapping("/user")
+    public ResponseEntity<List<ReservationDTO>> getUserReservations(@AuthenticationPrincipal UserDetails principal) {
+        User user = userService.findByEmail(principal.getUsername());
+        List<Reservation> reservations = reservationService.findByUser(user);
+        
+        List<ReservationDTO> reservationDTOs = reservations.stream()
+            .map(this::convertToDTO)
+            .collect(Collectors.toList());
+            
+        return ResponseEntity.ok(reservationDTOs);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ReservationDTO> getReservationById(@PathVariable("id") Long id) {
+        Reservation reservation = reservationService.findById(id);
+        if (reservation == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(convertToDTO(reservation));
+    }
+    
+    private ReservationDTO convertToDTO(Reservation reservation) {
+        ReservationDTO dto = new ReservationDTO();
+        dto.setId(reservation.getId());
+        dto.setPaid(reservation.isPaid());
+        
+        Event event = reservation.getEvent();
+        EventDTO eventDTO = new EventDTO();
+        eventDTO.setId(event.getId());
+        eventDTO.setTitle(event.getTitle());
+        eventDTO.setStartDateTime(event.getStartDateTime());
+        eventDTO.setLocation(event.getLocation());
+        eventDTO.setSeatsAvailable(event.getSeatsAvailable());
+        eventDTO.setPrix(event.getPrix());
+        
+        dto.setEvent(eventDTO);
+        return dto;
     }
 }

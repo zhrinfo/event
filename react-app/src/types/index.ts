@@ -15,6 +15,7 @@ export interface Event {
   startDateTime: string; // ISO string
   capacity: number;
   seatsAvailable: number;
+  prix: number;
   creator?: User;
 }
 

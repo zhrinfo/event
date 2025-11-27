@@ -13,7 +13,8 @@ const mockEvents: EventItem[] = [
     location: "Salle de conférence",
     category: "CONFERENCE",
     capacity: 100,
-    seatsAvailable: 75
+    seatsAvailable: 75,
+    prix: 49.99
   },
   { 
     id: 2, 
@@ -24,7 +25,8 @@ const mockEvents: EventItem[] = [
     location: "Salle de formation",
     category: "WORKSHOP",
     capacity: 30,
-    seatsAvailable: 15
+    seatsAvailable: 15,
+    prix: 79.99
   },
 ];
 
@@ -48,10 +50,22 @@ export default function Events() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [editing, setEditing] = useState(false);
   const [current, setCurrent] = useState<EventItem | null>(null);
-  const [form, setForm] = useState<{ title: string; date: string; description: string }>({
+  const [form, setForm] = useState<{ 
+    title: string; 
+    date: string; 
+    description: string;
+    location: string;
+    category: string;
+    capacity: number;
+    prix: number;
+  }>({
     title: "",
     date: "",
     description: "",
+    location: "",
+    category: "",
+    capacity: 0,
+    prix: 0
   });
 
   // Recherche + filtre + tri
@@ -63,6 +77,11 @@ export default function Events() {
   // Style focus + ref pour la barre de recherche
   const [searchFocused, setSearchFocused] = useState(false);
   const searchRef = useRef<HTMLInputElement>(null);
+
+  // Afficher le rôle de l'utilisateur dans la console
+  useEffect(() => {
+    console.log('Rôle de l\'utilisateur :', localStorage.getItem('role'));
+  }, []);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -140,12 +159,88 @@ export default function Events() {
     };
   }, []);
 
+  const [message, setMessage] = useState<string>("");
+
+  const deleteEvent = async (eventId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Vous devez être connecté pour supprimer un événement');
+      }
+
+      const response = await fetch(`http://localhost:8090/api/events/${eventId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}` 
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la suppression de l\'événement');
+      }
+
+      console.log('Événement supprimé avec succès');
+      setMessage("Événement supprimé avec succès!");
+      // Refresh events list after deletion
+      setEvents(events.filter(event => event.id.toString() !== eventId));
+      return true;
+    } catch (err) {
+      console.error('Erreur lors de la suppression:', err);
+      setMessage(err instanceof Error ? err.message : "Une erreur est survenue lors de la suppression");
+      throw err;
+    }
+  };
+
+  const updateEvent = async (eventId: string, eventData: Partial<EventItem>) => {
+    try {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Vous devez être connecté pour mettre à jour un événement');
+      }
+
+      const response = await fetch(`http://localhost:8090/api/events/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}` 
+        },
+        body: JSON.stringify(eventData)
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la mise à jour de l\'événement');
+      }
+
+      const result = await response.json();
+      console.log('Événement mis à jour:', result);
+      setMessage("Événement mis à jour avec succès!");
+      
+      // Update the events list with the updated event
+      setEvents(events.map(event => 
+        event.id.toString() === eventId ? { ...event, ...result } : event
+      ));
+      
+      return result;
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour:', err);
+      setMessage(err instanceof Error ? err.message : "Une erreur est survenue lors de la mise à jour");
+      throw err;
+    }
+  };
+
+
   const openEdit = (e: EventItem) => {
     setCurrent(e);
     setForm({
       title: e.title,
       date: toInputDate(e.date),
       description: e.description ?? "",
+      location: e.location ?? "",
+      category: e.category ?? "",
+      capacity: e.capacity ?? 0,
+      prix: e.prix ?? 0
     });
     setEditing(true);
   };
@@ -155,11 +250,6 @@ export default function Events() {
     setCurrent(null);
   };
 
-  const onDelete = async (id: number) => {
-    if (!confirm("Supprimer cet événement ?")) return;
-    // TODO: await fetch(`/api/events/${id}`, { method: "DELETE" });
-    setEvents((prev) => prev.filter((e) => e.id !== id));
-  };
 
   const handleReserve = (eventId: number) => {
     navigate(`/reserve/${eventId}`);
@@ -168,15 +258,36 @@ export default function Events() {
   const onSubmit = async (ev: React.FormEvent) => {
     ev.preventDefault();
     if (!current) return;
-    const updated: EventItem = {
-      ...current,
-      title: form.title.trim(),
-      description: form.description.trim(),
-      date: new Date(form.date).toISOString(),
-    };
-    // TODO: await fetch(`/api/events/${current.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(updated) });
-    setEvents((prev) => prev.map((e) => (e.id === current.id ? updated : e)));
-    closeEdit();
+    try {
+      const updatedEvent = await updateEvent(current.id.toString(), {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        location: form.location.trim(),
+        category: form.category,
+        startDateTime: new Date(form.date).toISOString(),
+        capacity: Number(form.capacity),
+        prix: Number(form.prix)
+      });
+      
+      // Mise à jour de la liste des événements avec la réponse du serveur
+      setEvents(prev => prev.map(e => 
+        e.id === current.id ? { 
+          ...e, 
+          ...updatedEvent, 
+          date: updatedEvent.startDateTime,
+          location: form.location,
+          category: form.category,
+          capacity: form.capacity,
+          prix: form.prix
+        } : e
+      ));
+      
+      closeEdit();
+      setMessage('Événement mis à jour avec succès');
+    } catch (err) {
+      console.error('Erreur lors de la mise à jour:', err);
+      setMessage(err instanceof Error ? err.message : "Une erreur est survenue lors de la mise à jour");
+    }
   };
 
   // Liste filtrée/triée
@@ -228,7 +339,7 @@ export default function Events() {
   return (
     <div>
       <Navbar />
-      <main style={{ maxWidth: 900, margin: "24px auto", padding: "0 16px" }}>
+      <main style={{ maxWidth: 1200, margin: "24px auto", padding: "0 16px" }}>
         {/* En-tête avec recherche et filtre */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 16 }}>
           <div>
@@ -504,58 +615,85 @@ export default function Events() {
                 </div>
                 
                 <div style={{ fontSize: "12px", color: "#444", margin: "6px 0" }}>
-                  <span>👥 {e.seatsAvailable || 0} / {e.capacity || 0} places</span>
-                  {e.seatsAvailable === 0 && (
-                    <span style={{ color: "#dc2626", marginLeft: "8px", fontWeight: "bold" }}>
-                      COMPLET
-                    </span>
-                  )}
+                  <div style={{ marginBottom: "4px" }}>
+                    <span>👥 {e.seatsAvailable || 0} / {e.capacity || 0} places</span>
+                    {e.seatsAvailable === 0 && (
+                      <span style={{ color: "#dc2626", marginLeft: "8px", fontWeight: "bold" }}>
+                        COMPLET
+                      </span>
+                    )}
+                  </div>
+                  <div>
+                    <span>💰 Prix: {e.prix ? `${e.prix} €` : 'Gratuit'}</span>
+                  </div>
                 </div>
                 
                 <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-                  <button 
-                    style={{ 
-                      padding: "6px 10px", 
-                      borderRadius: 6, 
-                      border: "1px solid #c7d2fe", 
-                      cursor: "pointer", 
-                      background: "#eef2ff",
-                      fontSize: "12px"
-                    }} 
-                    onClick={() => openEdit(e)}
-                  >
-                    Modifier
-                  </button>
-                  <button
-                    style={{ 
-                      padding: "6px 10px", 
-                      borderRadius: 6, 
-                      border: "1px solid #fecaca", 
-                      cursor: "pointer", 
-                      background: "#fee2e2", 
-                      color: "#991b1b",
-                      fontSize: "12px"
-                    }}
-                    onClick={() => onDelete(e.id)}
-                  >
-                    Supprimer
-                  </button>
-                  <button
-                    style={{ 
-                      padding: "6px 10px", 
-                      borderRadius: 6, 
-                      border: "1px solid #bbf7d0", 
-                      cursor: (e.seatsAvailable || 0) > 0 ? "pointer" : "not-allowed", 
-                      background: (e.seatsAvailable || 0) > 0 ? "#dcfce7" : "#f3f4f6",
-                      color: (e.seatsAvailable || 0) > 0 ? "#166534" : "#9ca3af",
-                      fontSize: "12px",
-                      opacity: (e.seatsAvailable || 0) > 0 ? 1 : 0.5
-                    }}
-                    onClick={() => (e.seatsAvailable || 0) > 0 && handleReserve(e.id)}
-                    disabled={(e.seatsAvailable || 0) === 0}
-                  >
-                    Réserver
-                  </button>
+                  {localStorage.getItem('role') === 'ROLE_ADMIN' && (
+                    <>
+                      <button 
+                        style={{ 
+                          padding: "6px 10px", 
+                          borderRadius: 6, 
+                          border: "1px solid #c7d2fe", 
+                          cursor: "pointer", 
+                          background: "#eef2ff",
+                          fontSize: "12px"
+                        }} 
+                        onClick={async () => {
+                          try {
+                            await openEdit(e);
+                          } catch (err) {
+                            console.error('Error opening edit:', err);
+                          }
+                        }}
+                      >
+                        Modifier
+                      </button>
+                      <button
+                        style={{ 
+                          padding: "6px 10px", 
+                          borderRadius: 6,
+                          border: "1px solid #fecaca", 
+                          cursor: "pointer", 
+                          background: "#fee2e2", 
+                          color: "#991b1b",
+                          fontSize: "12px"
+                        }}
+                        onClick={async () => {
+                          if (window.confirm('Êtes-vous sûr de vouloir supprimer cet événement ?')) {
+                            try {
+                              await deleteEvent(e.id.toString());
+                              setMessage('Événement supprimé avec succès');
+                            } catch (err) {
+                              console.error('Error deleting event:', err);
+                              setMessage('Erreur lors de la suppression de l\'événement');
+                            }
+                          }
+                        }}
+                      >
+                        Supprimer
+                      </button>
+                    </>
+                  )}
+                  {localStorage.getItem('role') === 'ROLE_USER' && (
+                    <button
+                      style={{ 
+                        padding: "6px 10px", 
+                        borderRadius: 6, 
+                        border: "1px solid #bbf7d0", 
+                        cursor: (e.seatsAvailable || 0) > 0 ? "pointer" : "not-allowed", 
+                        background: (e.seatsAvailable || 0) > 0 ? "#dcfce7" : "#f3f4f6",
+                        color: (e.seatsAvailable || 0) > 0 ? "#166534" : "#9ca3af",
+                        fontSize: "12px",
+                        opacity: (e.seatsAvailable || 0) > 0 ? 1 : 0.5
+                      }}
+                      onClick={() => (e.seatsAvailable || 0) > 0 && handleReserve(e.id)}
+                      disabled={(e.seatsAvailable || 0) === 0}
+                    >
+                      Réserver
+                    </button>
+                  )}
                 </div>
               </li>
             );
@@ -597,6 +735,31 @@ export default function Events() {
                   style={{ padding: 8, borderRadius: 6, border: "1px solid #ddd", resize: "vertical" }}
                 />
               </label>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span>Capacité</span>
+                  <input
+                    type="number"
+                    min="1"
+                    value={form.capacity}
+                    onChange={(e) => setForm((f) => ({ ...f, capacity: parseInt(e.target.value) || 0 }))}
+                    required
+                    style={{ padding: 8, borderRadius: 6, border: "1px solid #ddd" }}
+                  />
+                </label>
+                <label style={{ display: "grid", gap: 6 }}>
+                  <span>Prix (€)</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={form.prix}
+                    onChange={(e) => setForm((f) => ({ ...f, prix: parseFloat(e.target.value) || 0 }))}
+                    required
+                    style={{ padding: 8, borderRadius: 6, border: "1px solid #ddd" }}
+                  />
+                </label>
+              </div>
               <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", marginTop: 6 }}>
                 <button type="button" style={{ ...buttonStyle }} onClick={closeEdit}>
                   Annuler
