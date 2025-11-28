@@ -127,6 +127,11 @@
                 <password>${spring.datasource.password}</password>
               </configuration>
             </plugin>
+                        <plugin>
+                                <groupId>org.sonarsource.scanner.maven</groupId>
+                                <artifactId>sonar-maven-plugin</artifactId>
+                                <version>3.11.1.3021</version>
+                        </plugin>
             
         </plugins>
     </build>

@@ -1,3 +1,4 @@
+com\example\eventapp\dto\ReservationDTO.class
 com\example\eventapp\model\Reservation.class
 com\example\eventapp\repository\ReservationRepository.class
 com\example\eventapp\EventAppApplication.class
@@ -12,13 +13,17 @@ com\example\eventapp\service\EmailService.class
 com\example\eventapp\dto\PaymentRequestDto.class
 com\example\eventapp\security\JwtUtils.class
 com\example\eventapp\dto\PaymentConfirmationDto.class
+com\example\eventapp\controller\HealthController.class
+com\example\eventapp\controller\UserController.class
 com\example\eventapp\service\PaymentService.class
 com\example\eventapp\service\UserService.class
 com\example\eventapp\model\Event.class
+com\example\eventapp\dto\EventDTO.class
 com\example\eventapp\dto\AuthRequest.class
 com\example\eventapp\controller\EventController.class
 com\example\eventapp\service\ReservationService.class
 com\example\eventapp\service\EventService.class
+com\example\eventapp\dto\StripePaymentRequest.class
 com\example\eventapp\model\Role.class
 com\example\eventapp\config\OpenApiConfig.class
 com\example\eventapp\dto\AuthResponse.class
