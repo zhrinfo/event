@@ -28,9 +28,17 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> register(@Valid @RequestBody AuthRequest req) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody AuthRequest req) {
         User u = userService.register(req.getEmail(), req.getPassword(), null);
-        return ResponseEntity.ok(u.getEmail());
+        String token = jwtUtils.generateToken(u.getEmail());
+        
+        // Get user role (default to ROLE_USER if no roles)
+        String role = u.getRoles().stream()
+            .findFirst()
+            .map(r -> r.name())
+            .orElse("ROLE_USER");
+            
+        return ResponseEntity.ok(new AuthResponse(u.getId(), token, u.getEmail(), role));
     }
 
         @PostMapping("/login")
