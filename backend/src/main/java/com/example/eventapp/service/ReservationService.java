@@ -7,6 +7,7 @@ import com.example.eventapp.repository.EventRepository;
 import com.example.eventapp.repository.ReservationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
 
 @Service
 public class ReservationService {
@@ -35,13 +36,26 @@ public class ReservationService {
         r.setUser(user);
         r = reservationRepository.save(r);
 
-        // Simulate payment success (fictif)
-        r.setPaid(true);
-        reservationRepository.save(r);
+        // Payment will be handled via payment endpoints (mock)
 
         // Send confirmation email (async in production)
         emailService.sendReservationConfirmation(user.getEmail(), event);
 
         return r;
+    }
+
+    @Transactional
+    public Reservation confirmPayment(Long reservationId) {
+        Reservation r = reservationRepository.findById(reservationId).orElseThrow(() -> new IllegalArgumentException("Reservation not found"));
+        r.setPaid(true);
+        return reservationRepository.save(r);
+    }
+    
+    public List<Reservation> findByUser(User user) {
+        return reservationRepository.findByUser(user);
+    }
+    
+    public Reservation findById(Long id) {
+        return reservationRepository.findById(id).orElse(null);
     }
 }

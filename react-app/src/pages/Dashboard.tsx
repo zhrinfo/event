@@ -1,9 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import './dashboard.css';
 
+// Interface pour les événements de l'API
+interface ApiEvent {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  category: string | null;
+  startDateTime: string;
+  capacity: number;
+  seatsAvailable: number;
+  creator: {
+    id: number;
+    email: string;
+    fullName: string | null;
+    roles: string[];
+  };
+  prix: number;
+}
 
-// Types pour les événements
+// Types pour les événements affichés
 interface Event {
   id: number;
   title: string;
@@ -16,71 +34,92 @@ interface Event {
   attendees: number;
   status: 'confirmé' | 'en attente' | 'annulé';
   category: string;
+  price: number;
+  capacity: number;
+  seatsAvailable: number;
 }
 
-// Données statiques pour les événements
-const events: Event[] = [
-  {
-    id: 1,
-    title: 'Réunion Direction',
-    description: 'Réunion trimestrielle du comité de direction',
-    date: '2025-11-10',
-    startTime: '09:00',
-    endTime: '11:00',
-    room: 'Salle de Conférence B',
-    organizer: 'Marie Dubois',
-    attendees: 15,
-    status: 'confirmé',
-    category: 'réunion'
-  },
-  {
-    id: 2,
-    title: 'Formation React',
-    description: 'Session de formation sur React et TypeScript',
-    date: '2025-11-11',
-    startTime: '14:00',
-    endTime: '17:00',
-    room: 'Salle de Formation',
-    organizer: 'Pierre Martin',
-    attendees: 12,
-    status: 'confirmé',
-    category: 'formation'
-  },
-  {
-    id: 3,
-    title: 'Team Building',
-    description: 'Activité de cohésion d\'équipe',
-    date: '2025-11-12',
-    startTime: '16:00',
-    endTime: '18:00',
-    room: 'Espace Open Space',
-    organizer: 'Sophie Lambert',
-    attendees: 25,
-    status: 'en attente',
-    category: 'social'
-  },
-  {
-    id: 4,
-    title: 'Présentation Client',
-    description: 'Présentation du nouveau produit',
-    date: '2025-11-13',
-    startTime: '10:00',
-    endTime: '12:00',
-    room: 'Salle de Réunion A',
-    organizer: 'Thomas Bernard',
-    attendees: 8,
-    status: 'confirmé',
-    category: 'présentation'
-  }
-];
+// Fonction pour formater la date et l'heure
+const formatDateTime = (dateTimeString: string) => {
+  const date = new Date(dateTimeString);
+  return {
+    date: date.toISOString().split('T')[0],
+    time: date.toTimeString().substring(0, 5),
+    endTime: new Date(date.getTime() + 2 * 60 * 60 * 1000).toTimeString().substring(0, 5) // +2 heures
+  };
+};
 
 // Données pour les salles
 
-
 const Dashboard: React.FC = () => {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [filter, setFilter] = useState<string>('tous');
   const [view, setView] = useState<'list' | 'calendar'>('list');
+  const userEmail = localStorage.getItem('email');
+  const token = localStorage.getItem('token');
+
+  // Fetch events from API
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:8090/api/events', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Erreur HTTP: ${response.status}`);
+        }
+
+        const apiEvents: ApiEvent[] = await response.json();
+        
+        // Convertir les événements de l'API vers le format attendu par le composant
+        const formattedEvents: Event[] = apiEvents.map(event => {
+          const { date, time, endTime } = formatDateTime(event.startDateTime);
+          const status: 'confirmé' | 'en attente' | 'annulé' = 
+            event.seatsAvailable === 0 ? 'annulé' : 'confirmé';
+            
+          return {
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            date,
+            startTime: time,
+            endTime,
+            room: event.location,
+            organizer: event.creator.email,
+            attendees: event.capacity - event.seatsAvailable,
+            status,
+            category: event.category || 'Autre',
+            price: event.prix,
+            capacity: event.capacity,
+            seatsAvailable: event.seatsAvailable
+          };
+        });
+
+        setEvents(formattedEvents);
+        setError(null);
+      } catch (err) {
+        console.error('Erreur lors de la récupération des événements:', err);
+        setError('Impossible de charger les événements. Veuillez réessayer plus tard.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (token) {
+      fetchEvents();
+    } else {
+      setError('Veuillez vous connecter pour voir les événements');
+      setLoading(false);
+    }
+  }, [token]);
 
   // Calcul des statistiques
   const totalEvents = events.length;
@@ -104,6 +143,38 @@ const Dashboard: React.FC = () => {
       
       <div className="dashboard-container">
         <h1 className="dashboard-title">Dashboard Événements</h1>
+        
+        {loading && (
+          <div className="loading-message">
+            Chargement des événements en cours...
+          </div>
+        )}
+        
+        {error && (
+          <div className="error-message" style={{ color: 'red', margin: '10px 0' }}>
+            {error}
+          </div>
+        )}
+        
+        {userEmail && (
+         <p
+  style={{
+    marginTop: 8,
+    marginBottom: 24,
+    fontSize: 16,
+    color: '#ffffff',
+    backgroundColor: '#111827',
+    padding: '12px 18px',
+    borderRadius: 9999,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 6,
+  }}
+>
+  <span>Bonjour</span>
+  <strong style={{ fontWeight: 600 }}>{userEmail}</strong>
+</p>
+        )}
         
         {/* Cartes de statistiques */}
         <div className="dashboard-grid">
@@ -178,7 +249,7 @@ const Dashboard: React.FC = () => {
             </div>
 
             {/* Vue liste */}
-            {view === 'list' && (
+            {!loading && !error && view === 'list' && (
               <div className="events-grid">
                 {filteredEvents.map(event => (
                   <div
@@ -221,9 +292,7 @@ const Dashboard: React.FC = () => {
                         {event.description}
                       </p>
                       
-                      <div className="event-category" style={{ marginTop: 6 }}>
-                        <span className="category-badge">{event.category}</span>
-                      </div>
+                     
                     </div>
                   </div>
                 ))}
@@ -231,7 +300,7 @@ const Dashboard: React.FC = () => {
             )}
 
             {/* Vue calendrier simplifiée */}
-            {view === 'calendar' && (
+            {!loading && !error && view === 'calendar' && (
               <div className="calendar-view">
                 <div className="calendar-grid">
                   {upcomingEvents.map(event => (

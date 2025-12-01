@@ -1,0 +1,35 @@
+# Fichiers locaux
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+
+# Fichiers de verrouillage
+.terraform.lock.hcl
+
+# Fichiers de crash
+crash.log
+crash.*.log
+
+# Fichiers de sortie
+*.log
+
+# Fichiers d'environnement
+.env
+.terraform/environment
+
+# Fichiers d'IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Fichiers temporaires
+*.bak
+*.backup
+*~
+
+# Fichiers de plan
+*.plan
+*.tfplan

@@ -28,11 +28,19 @@ public class EventController {
     @PostMapping
     public ResponseEntity<Event> create(@Valid @RequestBody Event event, @AuthenticationPrincipal UserDetails principal) {
         User u = userService.findByEmail(principal.getUsername());
+        // S'assurer que le prix est correctement défini
+        if (event.getPrix() == null) {
+            event.setPrix(0.0); // Valeur par défaut si non fournie
+        }
         return ResponseEntity.ok(eventService.create(event, u));
     }
 
     @PutMapping("/{id}")
     public ResponseEntity<Event> update(@PathVariable("id") Long id, @Valid @RequestBody Event event) {
+        // S'assurer que le prix est correctement défini
+        if (event.getPrix() == null) {
+            event.setPrix(0.0); // Valeur par défaut si non fournie
+        }
         return ResponseEntity.ok(eventService.update(id, event));
     }
 

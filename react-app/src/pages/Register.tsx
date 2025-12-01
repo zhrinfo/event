@@ -204,14 +204,12 @@ const styles: { [k: string]: React.CSSProperties } = {
 export default function Register() {
   const [errors, setErrors] = useState<string[]>([]);
   const [form, setForm] = useState({
-    fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
   });
   const [message, setMessage] = useState<string | null>(null);
   const [focus, setFocus] = useState({
-    fullName: false,
     email: false,
     password: false,
     confirmPassword: false,
@@ -230,7 +228,7 @@ export default function Register() {
     setMessage(null);
     setErrors([]);
 
-    if (!form.fullName || !form.email || !form.password || !form.confirmPassword) {
+    if (!form.email || !form.password || !form.confirmPassword) {
       setMessage('Veuillez remplir tous les champs.');
       return;
     }
@@ -241,34 +239,27 @@ export default function Register() {
 
     try {
       const res = await register({
-        name: form.fullName,
         email: form.email,
         password: form.password,
-        confirmed_password: form.confirmPassword,
       });
 
-      if (res?.data?.errors) {
-        const serverErrors = res.data.errors as any;
-        const flat = Array.isArray(serverErrors) ? serverErrors : Object.values(serverErrors).flat();
-        setErrors(flat.map(String));
-        return;
-      }
-
-      if (res?.data?.token) {
-        localStorage.setItem('token', res.data.token);
-        localStorage.setItem('email', res?.data?.email || form.email);
-        localStorage.setItem('id', String(res.data.id));
-        localStorage.setItem('role', res.data.role);
-        
-        setMessage('Inscription réussie ! Redirection...');
+      // Le backend retourne seulement l'email après l'inscription
+      if (res?.data) {
+        setMessage('Inscription réussie ! Vous pouvez maintenant vous connecter.');
         setTimeout(() => {
-          window.location.href = '/';
+          window.location.href = '/login';
         }, 2000);
       } else {
         setMessage('Une erreur est survenue.');
       }
-    } catch {
-      setMessage('Erreur réseau. Réessayez.');
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        setMessage(error.response.data.message);
+      } else if (error.response?.data) {
+        setMessage('Erreur lors de l\'inscription.');
+      } else {
+        setMessage('Erreur réseau. Réessayez.');
+      }
     }
   };
 
@@ -285,28 +276,6 @@ export default function Register() {
         <p style={styles.subtitle}>Créez votre compte</p>
 
         <form onSubmit={onSubmit} noValidate style={styles.form}>
-          <div style={styles.formGroup}>
-            <label style={styles.label}>
-              Nom complet
-              <div style={styles.inputWrapper}>
-                <span style={{ ...styles.inputIcon, color: focus.fullName ? '#667eea' : '#a0aec0' }} aria-hidden>
-                  <IconUser />
-                </span>
-                <input
-                  style={{ ...styles.input, ...(focus.fullName ? styles.inputFocus : undefined) }}
-                  type="text"
-                  name="fullName"
-                  value={form.fullName}
-                  onChange={onChange}
-                  onFocus={() => setFocus(s => ({ ...s, fullName: true }))}
-                  onBlur={() => setFocus(s => ({ ...s, fullName: false }))}
-                  placeholder="Votre nom complet"
-                  required
-                />
-              </div>
-            </label>
-          </div>
-
           <div style={styles.formGroup}>
             <label style={styles.label}>
               Email

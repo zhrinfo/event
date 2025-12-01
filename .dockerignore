@@ -1,0 +1,27 @@
+# Node modules
+react-app/node_modules
+react-app/dist
+
+# Maven
+backend/target
+backend/.mvn
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local

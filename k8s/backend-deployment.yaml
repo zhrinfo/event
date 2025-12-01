@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: event-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: event-backend
+  template:
+    metadata:
+      labels:
+        app: event-backend
+    spec:
+      containers:
+        - name: backend
+          image: abdessamad79971/event-backend:latest
+          ports:
+            - containerPort: 8090
+          env:
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:mysql://mysql:3306/eventapp?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "eventapp"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: "eventapp123"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: event-backend
+spec:
+  selector:
+    app: event-backend
+  ports:
+    - protocol: TCP
+      port: 8090
+      targetPort: 8090

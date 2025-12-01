@@ -20,7 +20,12 @@ public class EventService {
 
     public Event create(Event event, User creator) {
         event.setCreator(creator);
-        if (event.getCapacity() > 0) event.setSeatsAvailable(event.getCapacity());
+        if (event.getPrix() == null) {
+            event.setPrix(0.0);
+        }
+        if (event.getCapacity() > 0) {
+            event.setSeatsAvailable(event.getCapacity());
+        }
         return eventRepository.save(event);
     }
 
@@ -31,10 +36,19 @@ public class EventService {
         e.setLocation(update.getLocation());
         e.setCategory(update.getCategory());
         e.setStartDateTime(update.getStartDateTime());
-        // capacity change logic (naive): adjust seatsAvailable accordingly
+        
+        // Gestion du prix
+        if (update.getPrix() != null) {
+            e.setPrix(update.getPrix());
+        } else {
+            e.setPrix(0.0);
+        }
+        
+        // Gestion de la capacité
         int diff = update.getCapacity() - e.getCapacity();
         e.setCapacity(update.getCapacity());
         e.setSeatsAvailable(Math.max(0, e.getSeatsAvailable() + diff));
+        
         return eventRepository.save(e);
     }
 

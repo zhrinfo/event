@@ -1,5 +1,6 @@
 package com.example.eventapp.model;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.FutureOrPresent;
 import jakarta.validation.constraints.NotBlank;
@@ -30,6 +31,10 @@ public class Event {
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"hibernateLazyInitializer","handler"})
     private User creator;
 
+    @Column(name = "prix", nullable = false, columnDefinition = "DOUBLE DEFAULT 0.0")
+    @JsonInclude(JsonInclude.Include.ALWAYS)
+    private Double prix = 0.0;
+
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public String getTitle() { return title; }
@@ -48,4 +53,6 @@ public class Event {
     public void setSeatsAvailable(int seatsAvailable) { this.seatsAvailable = seatsAvailable; }
     public User getCreator() { return creator; }
     public void setCreator(User creator) { this.creator = creator; }
+    public Double getPrix() { return prix; }
+    public void setPrix(Double prix) { this.prix = prix; }
 }

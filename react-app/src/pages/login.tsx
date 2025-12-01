@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { login } from '../services/authService';
+import { login, setUserRoles, type LoginData } from '../services/authService';
 
 // Icons
 function IconMail(props: React.SVGProps<SVGSVGElement>) {
@@ -209,34 +209,40 @@ export default function Login() {
     }
 
     try {
-      const res = await login({ email: form.email, password: form.password });
-
-      if (res?.data?.errors) {
-        const serverErrors = res.data.errors as any;
-        const flat = Array.isArray(serverErrors) ? serverErrors : Object.values(serverErrors).flat();
-        setErrors(flat.map(String));
-        return;
-      }
+      const loginData: LoginData = { email: form.email, password: form.password };
+      const res = await login(loginData);
 
       if (res?.data?.token) {
+        // Stocker les informations de base
         localStorage.setItem('token', res.data.token);
-        localStorage.setItem('email', res?.data?.email || form.email);
-        localStorage.setItem('id', String(res.data.id));
-        localStorage.setItem('role', res.data.role);
-
-        setMessage('Connexion réussie.');
+        localStorage.setItem('email', res.data.email);
+        localStorage.setItem('id', res.data.userId.toString());
         
-        // Rediriger vers /users si admin, sinon vers la page d'accueil
-        if (res.data.role === 'admin') {
-          navigate('/users');
-        } else {
-          navigate('/');
-        }
+        // Gérer les rôles - le backend envoie un tableau de rôles
+        const roles = Array.isArray(res.data.roles) ? res.data.roles : [res.data.role];
+        setUserRoles(roles);
+        
+        setMessage('Connexion réussie! Redirection...');
+        
+        // Rediriger selon le rôle
+        setTimeout(() => {
+          if (roles.includes('ROLE_ADMIN')) {
+            navigate('/dashboard');
+          } else {
+            navigate('/events');
+          }
+        }, 1500);
       } else {
         setMessage('Identifiants invalides.');
       }
-    } catch {
-      setMessage('Erreur réseau. Réessayez.');
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        setMessage('Email ou mot de passe incorrect.');
+      } else if (error.response?.data?.message) {
+        setMessage(error.response.data.message);
+      } else {
+        setMessage('Erreur réseau. Réessayez.');
+      }
     }
   };
 
